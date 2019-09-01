@@ -49,12 +49,12 @@ function render() {
   context.clearRect(0, 0, context.canvas.width, context.canvas.height)
   context.translate(canvas.width / 2, canvas.height / 2)
 
-  const cameraPos = math.matrix([[0], [0], [-1]])
+  const cameraPos = math.matrix([[0], [0], [-5]])
 
-  const [[cameraX], [cameraY], [cameraZ]] = math.multiply(rz(b), rx(a), cameraPos).toArray()
+  const [[cameraX], [cameraY], [cameraZ]] = math
+    .multiply(rz(-b + Math.PI), rx(a), cameraPos)
+    .toArray()
   const camera = [cameraX, -cameraY, cameraZ]
-
-  console.log(math.round(cameraX, 3), math.round(cameraY, 3), math.round(cameraZ, 3))
 
   /** @type [number, number][][] */
   let faces = []
@@ -63,27 +63,23 @@ function render() {
     faces = faces.concat(cubeFaces(cube))
   })
 
-  const colors = ["#111", "#222", "#333", "#444", "#555", "#666", "#777", "#888", "#999"]
+  const sortedFaces = faces.sort((face1, face2) => {
+    const face1Center = faceCenter(face1.vertices)
+    const face2Center = faceCenter(face2.vertices)
 
-  const sortedFaces = faces
-    // .slice(0, 0)
-    .sort((face1, face2) => {
-      const face1Center = faceCenter(face1.vertices)
-      const face2Center = faceCenter(face2.vertices)
-
-      return math.distance(face2Center, camera) - math.distance(face1Center, camera)
-    })
-
-  console.log(sortedFaces)
+    return math.distance(face2Center, camera) - math.distance(face1Center, camera)
+  })
 
   sortedFaces.forEach((face, index) => {
+    const distance = math.distance(faceCenter(face.vertices), camera)
+    // console.log(distance * 9)
     const face2d = face.vertices.map(vertices => projectIsometric(a, b, vertices))
     context.beginPath()
     context.moveTo(...face2d[0])
     context.lineTo(...face2d[1])
     context.lineTo(...face2d[2])
     context.lineTo(...face2d[3])
-    context.fillStyle = face.color
+    context.fillStyle = `hsl(${(distance - 3) * 30}, 100%, 50%)`
     context.fill()
     context.closePath()
   })
@@ -141,33 +137,33 @@ function cubeFaces([x, y, z]) {
       ],
       color: "tomato",
     },
-    // {
-    //   vertices: [
-    //     [x - h, y + h, z - h],
-    //     [x - h, y - h, z - h],
-    //     [x - h, y - h, z + h],
-    //     [x - h, y + h, z + h],
-    //   ],
-    //   color: "red",
-    // },
-    // {
-    //   vertices: [
-    //     [x - h, y + h, z - h],
-    //     [x - h, y + h, z + h],
-    //     [x + h, y + h, z + h],
-    //     [x + h, y + h, z - h],
-    //   ],
-    //   color: "green",
-    // },
-    // {
-    //   vertices: [
-    //     [x - h, y + h, z - h],
-    //     [x + h, y + h, z - h],
-    //     [x + h, y - h, z - h],
-    //     [x - h, y - h, z - h],
-    //   ],
-    //   color: "black",
-    // },
+    {
+      vertices: [
+        [x - h, y + h, z - h],
+        [x - h, y - h, z - h],
+        [x - h, y - h, z + h],
+        [x - h, y + h, z + h],
+      ],
+      color: "red",
+    },
+    {
+      vertices: [
+        [x - h, y + h, z - h],
+        [x - h, y + h, z + h],
+        [x + h, y + h, z + h],
+        [x + h, y + h, z - h],
+      ],
+      color: "green",
+    },
+    {
+      vertices: [
+        [x - h, y + h, z - h],
+        [x + h, y + h, z - h],
+        [x + h, y - h, z - h],
+        [x - h, y - h, z - h],
+      ],
+      color: "black",
+    },
   ]
 }
 
