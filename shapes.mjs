@@ -28,10 +28,8 @@ zSlider.addEventListener("input", () => render())
 function render() {
   const alpha = +alphaSlider.value
   const beta = +betaSlider.value
-
-  const perspective = (alpha * Math.PI) / 180
-  const cos30 = Math.cos(perspective)
-  const sin30 = Math.sin(perspective)
+  const a = (alpha * Math.PI) / 180
+  const b = (beta * Math.PI) / 180
 
   /** @type {[number, number, number][]} */
   const cubes = [
@@ -58,13 +56,21 @@ function render() {
     faces = faces.concat(cubeFaces(cube))
   })
 
+  const cameraX = Math.cos(a) * 99999
+  const cameraY = Math.sin(a) * 99999
+  const cameraZ = Math.sin(b) * 99999
+
+  const [x, y] = projectIsometric([cameraZ, cameraY, cameraX])
+
+  console.log(x / 99999, y / 99999)
+
   faces
     .sort((face1, face2) => {
       const [ax, ay, az] = faceCenter(face1.vertices)
       const [bx, by, bz] = faceCenter(face2.vertices)
 
-      const aDistance = Math.sqrt((9999 - ax) ** 2 + (9999 + ay) ** 2 + (9999 - az) ** 2)
-      const bDistance = Math.sqrt((9999 - bx) ** 2 + (9999 + by) ** 2 + (9999 - bz) ** 2)
+      const aDistance = Math.sqrt((cameraX - ax) ** 2 + (cameraY + ay) ** 2 + (cameraZ - az) ** 2)
+      const bDistance = Math.sqrt((cameraX - bx) ** 2 + (cameraY + by) ** 2 + (cameraZ - bz) ** 2)
 
       return bDistance - aDistance
     })
@@ -81,9 +87,6 @@ function render() {
     })
 
   function projectIsometric([x, y, z]) {
-    const a = (alpha * Math.PI) / 180
-    const b = (beta * Math.PI) / 180
-
     const m1 = math.matrix([
       [1, 0, 0],
       [0, Math.cos(a), Math.sin(a)],
@@ -98,12 +101,11 @@ function render() {
 
     const m3 = math.matrix([[x], [y], [z]])
 
-    const c = math.multiply(m1, m2)
-    const d = math.multiply(c, m3)
+    const c = math.multiply(math.multiply(m1, m2), m3)
 
     const identity = math.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
 
-    const [bx, by] = math.multiply(identity, d)._data
+    const [bx, by] = math.multiply(identity, c)._data
 
     return [bx, -by].map(c => c * scale)
   }
@@ -119,7 +121,7 @@ function cubeFaces([x, y, z]) {
         [x + h, y + h, z - h],
         [x + h, y - h, z - h],
       ],
-      color: "#777",
+      color: "violet",
     },
     {
       vertices: [
@@ -128,7 +130,7 @@ function cubeFaces([x, y, z]) {
         [x - h, y - h, z - h],
         [x - h, y - h, z + h],
       ],
-      color: "#333",
+      color: "teal",
     },
     {
       vertices: [
@@ -137,7 +139,7 @@ function cubeFaces([x, y, z]) {
         [x - h, y + h, z + h],
         [x + h, y + h, z + h],
       ],
-      color: "#aaa",
+      color: "yellow",
     },
     {
       vertices: [
