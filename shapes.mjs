@@ -49,12 +49,12 @@ function render() {
   context.clearRect(0, 0, context.canvas.width, context.canvas.height)
   context.translate(canvas.width / 2, canvas.height / 2)
 
-  const cameraPos = math.matrix([[0], [0], [-5]])
+  const cameraPos = math.matrix([[0], [0], [-10]])
 
   const [[cameraX], [cameraY], [cameraZ]] = math
     .multiply(rz(-b + Math.PI), rx(a), cameraPos)
     .toArray()
-  const camera = [cameraX, -cameraY, cameraZ]
+  const camera = [cameraX, cameraY, cameraZ]
 
   /** @type [number, number][][] */
   let faces = []
@@ -79,12 +79,12 @@ function render() {
     context.lineTo(...face2d[1])
     context.lineTo(...face2d[2])
     context.lineTo(...face2d[3])
-    context.fillStyle = `hsl(${(distance - 3) * 30}, 100%, 50%)`
+    context.fillStyle = face.color
     context.fill()
     context.closePath()
   })
 
-  guides(a, b)
+  // guides(a, b)
 }
 
 function projectIsometric(a, b, [x, y, z]) {
@@ -162,7 +162,7 @@ function cubeFaces([x, y, z]) {
         [x + h, y - h, z - h],
         [x - h, y - h, z - h],
       ],
-      color: "black",
+      color: "cyan",
     },
   ]
 }
