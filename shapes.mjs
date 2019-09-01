@@ -28,8 +28,8 @@ zSlider.addEventListener("input", () => render())
 function render() {
   const alpha = +alphaSlider.value
   const beta = +betaSlider.value
-  const a = (alpha * Math.PI) / 180
-  const b = (beta * Math.PI) / 180
+  let a = (alpha * Math.PI) / 180
+  let b = (beta * Math.PI) / 180
 
   /** @type {[number, number, number][]} */
   const cubes = [
@@ -49,6 +49,12 @@ function render() {
   context.clearRect(0, 0, context.canvas.width, context.canvas.height)
   context.translate(canvas.width / 2, canvas.height / 2)
 
+  const cameraPos = math.matrix([[0], [0], [-1]])
+
+  const [[cameraX], [cameraY], [cameraZ]] = math.multiply(rz(b), rx(a), cameraPos).toArray()
+
+  console.log(math.round(cameraX, 3), math.round(cameraY, 3), math.round(cameraZ, 3))
+
   /** @type [number, number][][] */
   let faces = []
 
@@ -56,26 +62,19 @@ function render() {
     faces = faces.concat(cubeFaces(cube))
   })
 
-  const cameraX = Math.cos(a) * 99999
-  const cameraY = Math.sin(a) * 99999
-  const cameraZ = Math.sin(b) * 99999
-
-  const [x, y] = projectIsometric([cameraZ, cameraY, cameraX])
-
-  console.log(x / 99999, y / 99999)
-
   faces
+    // .slice(0, 0)
     .sort((face1, face2) => {
       const [ax, ay, az] = faceCenter(face1.vertices)
       const [bx, by, bz] = faceCenter(face2.vertices)
 
-      const aDistance = Math.sqrt((cameraX - ax) ** 2 + (cameraY + ay) ** 2 + (cameraZ - az) ** 2)
-      const bDistance = Math.sqrt((cameraX - bx) ** 2 + (cameraY + by) ** 2 + (cameraZ - bz) ** 2)
+      const aDistance = Math.sqrt((cameraX - ax) ** 2 + (cameraY - ay) ** 2 + (cameraZ - az) ** 2)
+      const bDistance = Math.sqrt((cameraX - bx) ** 2 + (cameraY - by) ** 2 + (cameraZ - bz) ** 2)
 
       return bDistance - aDistance
     })
     .forEach(face => {
-      const face2d = face.vertices.map(projectIsometric)
+      const face2d = face.vertices.map(vertices => projectIsometric(a, b, vertices))
       context.beginPath()
       context.moveTo(...face2d[0])
       context.lineTo(...face2d[1])
@@ -86,29 +85,28 @@ function render() {
       context.closePath()
     })
 
-  function projectIsometric([x, y, z]) {
-    const m1 = math.matrix([
-      [1, 0, 0],
-      [0, Math.cos(a), Math.sin(a)],
-      [0, -Math.sin(a), Math.cos(a)],
-    ])
+  guides(a, b)
+}
 
-    const m2 = math.matrix([
-      [Math.cos(b), 0, -Math.sin(b)],
-      [0, 1, 0],
-      [Math.sin(b), 0, Math.cos(b)],
-    ])
+function projectIsometric(a, b, [x, y, z]) {
+  const point = math.matrix([[x], [y], [z]])
+  const [bx, by] = math.multiply(orthogonalProjection, rx(a), rz(b), point).toArray()
+  return [bx, -by].map(c => c * scale)
+}
 
-    const m3 = math.matrix([[x], [y], [z]])
+const orthogonalProjection = math.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
 
-    const c = math.multiply(math.multiply(m1, m2), m3)
+function rx(t) {
+  t = -t
+  return math.matrix([[1, 0, 0], [0, Math.cos(t), -Math.sin(t)], [0, Math.sin(t), Math.cos(t)]])
+}
 
-    const identity = math.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
+function ry(t) {
+  return math.matrix([[Math.cos(t), 0, Math.sin(t)], [0, 1, 0], [-Math.sin(t), 0, Math.cos(t)]])
+}
 
-    const [bx, by] = math.multiply(identity, c)._data
-
-    return [bx, -by].map(c => c * scale)
-  }
+function rz(t) {
+  return math.matrix([[Math.cos(t), -Math.sin(t), 0], [Math.sin(t), Math.cos(t), 0], [0, 0, 1]])
 }
 
 function cubeFaces([x, y, z]) {
@@ -176,17 +174,59 @@ function faceCenter(/** @type [number, number, number][] */ face) {
   let avgY = 0
   let avgZ = 0
 
-  face.slice(0, 4).forEach(([x, y, z]) => {
+  face.forEach(([x, y, z]) => {
     avgX += x
     avgY += y
     avgZ += z
   })
 
-  avgX /= face.length - 1
-  avgY /= face.length - 1
-  avgZ /= face.length - 1
+  avgX /= face.length
+  avgY /= face.length
+  avgZ /= face.length
 
   return [avgX, avgY, avgZ]
 }
 
 render()
+
+function guides(a, b) {
+  const x1 = projectIsometric(a, b, [0, 0, 0])
+  const x2 = projectIsometric(a, b, [2, 0, 0])
+  context.beginPath()
+  context.strokeStyle = "red"
+  context.lineWidth = 4
+  context.moveTo(...x1)
+  context.lineTo(...x2)
+  context.stroke()
+  context.closePath()
+
+  const y1 = projectIsometric(a, b, [0, 0, 0])
+  const y2 = projectIsometric(a, b, [0, 2, 0])
+  context.beginPath()
+  context.strokeStyle = "green"
+  context.lineWidth = 4
+  context.moveTo(...y1)
+  context.lineTo(...y2)
+  context.stroke()
+  context.closePath()
+
+  const z1 = projectIsometric(a, b, [0, 0, 0])
+  const z2 = projectIsometric(a, b, [0, 0, 2])
+  context.beginPath()
+  context.strokeStyle = "blue"
+  context.lineWidth = 4
+  context.moveTo(...z1)
+  context.lineTo(...z2)
+  context.stroke()
+  context.closePath()
+
+  const w1 = projectIsometric(a, b, [0, 0, 0])
+  const w2 = projectIsometric(a, b, [1, 1, 1])
+  context.beginPath()
+  context.strokeStyle = "orange"
+  context.lineWidth = 10
+  context.moveTo(...w1)
+  context.lineTo(...w2)
+  context.stroke()
+  context.closePath()
+}
