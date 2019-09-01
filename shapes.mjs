@@ -5,8 +5,8 @@ const context = canvas.getContext("2d")
 context.translate(canvas.width / 2, canvas.height / 2)
 
 // Play around
-const scale = 100
-const cubeSize = 0.7
+const scale = 80
+const cubeSize = 1
 
 /** @type {HTMLInputElement} */
 const alphaSlider = document.getElementById("alpha")
@@ -26,7 +26,7 @@ ySlider.addEventListener("input", () => render())
 zSlider.addEventListener("input", () => render())
 
 function render() {
-  const alpha = +alphaSlider.value
+  const alpha = 125.264
   const beta = +betaSlider.value
   let a = (alpha * Math.PI) / 180
   let b = (beta * Math.PI) / 180
@@ -42,6 +42,10 @@ function render() {
     [0, 0, 0],
     [1, 0, 0],
     [2, 0, 0],
+
+    [2, 2, 0],
+    [2, 2, 1],
+    [2, 2, 2],
     [+xSlider.value, +ySlider.value, +zSlider.value],
   ]
 
@@ -49,7 +53,7 @@ function render() {
   context.clearRect(0, 0, context.canvas.width, context.canvas.height)
   context.translate(canvas.width / 2, canvas.height / 2)
 
-  const cameraPos = math.matrix([[0], [0], [-10]])
+  const cameraPos = math.matrix([[0], [0], [-50000]])
 
   const [[cameraX], [cameraY], [cameraZ]] = math
     .multiply(rz(-b + Math.PI), rx(a), cameraPos)
@@ -70,16 +74,17 @@ function render() {
     return math.distance(face2Center, camera) - math.distance(face1Center, camera)
   })
 
-  sortedFaces.forEach((face, index) => {
+  sortedFaces.forEach(face => {
     const distance = math.distance(faceCenter(face.vertices), camera)
-    // console.log(distance * 9)
+    console.log(`hsl(0, 100%, ${(distance - 49999) * 9}%)`)
     const face2d = face.vertices.map(vertices => projectIsometric(a, b, vertices))
     context.beginPath()
     context.moveTo(...face2d[0])
     context.lineTo(...face2d[1])
     context.lineTo(...face2d[2])
     context.lineTo(...face2d[3])
-    context.fillStyle = face.color
+    console.log(distance)
+    context.fillStyle = `hsl(${20 + (distance - 49990) * 20}, 100%, 40%)`
     context.fill()
     context.closePath()
   })
