@@ -52,6 +52,7 @@ function render() {
   const cameraPos = math.matrix([[0], [0], [-1]])
 
   const [[cameraX], [cameraY], [cameraZ]] = math.multiply(rz(b), rx(a), cameraPos).toArray()
+  const camera = [cameraX, -cameraY, cameraZ]
 
   console.log(math.round(cameraX, 3), math.round(cameraY, 3), math.round(cameraZ, 3))
 
@@ -62,28 +63,30 @@ function render() {
     faces = faces.concat(cubeFaces(cube))
   })
 
-  faces
+  const colors = ["#111", "#222", "#333", "#444", "#555", "#666", "#777", "#888", "#999"]
+
+  const sortedFaces = faces
     // .slice(0, 0)
     .sort((face1, face2) => {
-      const [ax, ay, az] = faceCenter(face1.vertices)
-      const [bx, by, bz] = faceCenter(face2.vertices)
+      const face1Center = faceCenter(face1.vertices)
+      const face2Center = faceCenter(face2.vertices)
 
-      const aDistance = Math.sqrt((cameraX - ax) ** 2 + (cameraY - ay) ** 2 + (cameraZ - az) ** 2)
-      const bDistance = Math.sqrt((cameraX - bx) ** 2 + (cameraY - by) ** 2 + (cameraZ - bz) ** 2)
+      return math.distance(face2Center, camera) - math.distance(face1Center, camera)
+    })
 
-      return bDistance - aDistance
-    })
-    .forEach(face => {
-      const face2d = face.vertices.map(vertices => projectIsometric(a, b, vertices))
-      context.beginPath()
-      context.moveTo(...face2d[0])
-      context.lineTo(...face2d[1])
-      context.lineTo(...face2d[2])
-      context.lineTo(...face2d[3])
-      context.fillStyle = face.color
-      context.fill()
-      context.closePath()
-    })
+  console.log(sortedFaces)
+
+  sortedFaces.forEach((face, index) => {
+    const face2d = face.vertices.map(vertices => projectIsometric(a, b, vertices))
+    context.beginPath()
+    context.moveTo(...face2d[0])
+    context.lineTo(...face2d[1])
+    context.lineTo(...face2d[2])
+    context.lineTo(...face2d[3])
+    context.fillStyle = face.color
+    context.fill()
+    context.closePath()
+  })
 
   guides(a, b)
 }
@@ -91,13 +94,12 @@ function render() {
 function projectIsometric(a, b, [x, y, z]) {
   const point = math.matrix([[x], [y], [z]])
   const [bx, by] = math.multiply(orthogonalProjection, rx(a), rz(b), point).toArray()
-  return [bx, -by].map(c => c * scale)
+  return [bx, by].map(c => c * scale)
 }
 
 const orthogonalProjection = math.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
 
 function rx(t) {
-  t = -t
   return math.matrix([[1, 0, 0], [0, Math.cos(t), -Math.sin(t)], [0, Math.sin(t), Math.cos(t)]])
 }
 
@@ -137,35 +139,35 @@ function cubeFaces([x, y, z]) {
         [x - h, y + h, z + h],
         [x + h, y + h, z + h],
       ],
-      color: "yellow",
+      color: "tomato",
     },
-    {
-      vertices: [
-        [x - h, y + h, z - h],
-        [x - h, y - h, z - h],
-        [x - h, y - h, z + h],
-        [x - h, y + h, z + h],
-      ],
-      color: "red",
-    },
-    {
-      vertices: [
-        [x - h, y + h, z - h],
-        [x - h, y + h, z + h],
-        [x + h, y + h, z + h],
-        [x + h, y + h, z - h],
-      ],
-      color: "green",
-    },
-    {
-      vertices: [
-        [x - h, y + h, z - h],
-        [x + h, y + h, z - h],
-        [x + h, y - h, z - h],
-        [x - h, y - h, z - h],
-      ],
-      color: "blue",
-    },
+    // {
+    //   vertices: [
+    //     [x - h, y + h, z - h],
+    //     [x - h, y - h, z - h],
+    //     [x - h, y - h, z + h],
+    //     [x - h, y + h, z + h],
+    //   ],
+    //   color: "red",
+    // },
+    // {
+    //   vertices: [
+    //     [x - h, y + h, z - h],
+    //     [x - h, y + h, z + h],
+    //     [x + h, y + h, z + h],
+    //     [x + h, y + h, z - h],
+    //   ],
+    //   color: "green",
+    // },
+    // {
+    //   vertices: [
+    //     [x - h, y + h, z - h],
+    //     [x + h, y + h, z - h],
+    //     [x + h, y - h, z - h],
+    //     [x - h, y - h, z - h],
+    //   ],
+    //   color: "black",
+    // },
   ]
 }
 
