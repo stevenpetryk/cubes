@@ -19,11 +19,15 @@ const ySlider = document.getElementById("y")
 /** @type {HTMLInputElement} */
 const zSlider = document.getElementById("z")
 
-alphaSlider.addEventListener("input", () => render())
-betaSlider.addEventListener("input", () => render())
-xSlider.addEventListener("input", () => render())
-ySlider.addEventListener("input", () => render())
-zSlider.addEventListener("input", () => render())
+alphaSlider.addEventListener("input", () => enqueueRender())
+betaSlider.addEventListener("input", () => enqueueRender())
+xSlider.addEventListener("input", () => enqueueRender())
+ySlider.addEventListener("input", () => enqueueRender())
+zSlider.addEventListener("input", () => enqueueRender())
+
+function enqueueRender() {
+  requestAnimationFrame(render)
+}
 
 function render() {
   const alpha = 125.264
@@ -89,16 +93,14 @@ function render() {
     context.closePath()
   })
 
-  // guides(a, b)
+  guides(a, b)
 }
 
 function projectIsometric(a, b, [x, y, z]) {
   const point = math.matrix([[x], [y], [z]])
-  const [bx, by] = math.multiply(orthogonalProjection, rx(a), rz(b), point).toArray()
+  const [bx, by] = math.multiply(rx(a), rz(b), point).toArray()
   return [bx, by].map(c => c * scale)
 }
-
-const orthogonalProjection = math.matrix([[1, 0, 0], [0, 1, 0], [0, 0, 0]])
 
 function rx(t) {
   return math.matrix([[1, 0, 0], [0, Math.cos(t), -Math.sin(t)], [0, Math.sin(t), Math.cos(t)]])
